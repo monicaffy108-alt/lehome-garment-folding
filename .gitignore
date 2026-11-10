@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Isaac Sim / Isaac Lab
+logs/
+outputs/
+*.usd
+*.usdz
+
+# Data and checkpoints
+data/
+datasets/
+checkpoints/
+runs/
+wandb/
+*.parquet
+*.mp4
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
