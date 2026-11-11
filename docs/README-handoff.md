@@ -69,13 +69,42 @@
 | 本项目仓库 | https://github.com/monicaffy108-alt/lehome-garment-folding |
 | 官方 benchmark 仓库 | https://github.com/lehome-official/lehome-challenge |
 | 挑战赛官网 | https://lehome-challenge.com/ |
-| 冠军方案技术报告（arXiv） | https://arxiv.org/abs/2606.27163 |
+| **Ilia Larchenko 方案页（线上仿真赛 #1 of 62 / 真机 #2，单人队）** | https://ilialarchenko.com/projects/lehome2026/ |
+| **Ilia 技术报告（arXiv 2606.27163，消融表 + sim2real 工具链在这）** | https://arxiv.org/abs/2606.27163 |
+| **Ilia 代码仓库（lehome_solution，架构/训练命令/checkpoint 在这）** | https://github.com/IliaLarchenko/lehome_solution |
+| **Ilia 模型权重（HuggingFace）** | https://huggingface.co/IliaLarchenko/lehome_sim |
+| Ilia YouTube（折叠过程/失败案例/真机部署完整视频） | https://www.youtube.com/@ilialarchenko |
 | Isaac Lab 仿真环境论文 | https://arxiv.org/abs/2604.22363 |
-| YifanLiu 主页（Ebtech-MIAA 17th worldwide） | https://yifanliu-ai.github.io/ |
+| YifanLiu 主页（Ebtech-MIAA 17th worldwide，初赛 #2） | https://yifanliu-ai.github.io/ |
 | YifanLiu 的 workspace（**只是官方仓库副本**，不是他的方案代码） | https://github.com/YifanLiu-AI/lehome-challenge |
-| 冠军 sZs 队写-up（港中深） | https://sds.cuhk.edu.cn/article/2439 |
-| 冠军训练流水线公开报告（Pushing Robotic Garment Folding Further with Limited Teleop Data） | https://aarvis.github.io/lehome2026/ |
-| YifanLiu 的复现技术细节（他的 17th 方案） | https://yifanliu-ai.github.io/ |
+| 真机冠军 sZs 队写-up（港中深，技术细节未公开，先别啃） | https://sds.cuhk.edu.cn/article/2439 |
+
+## 6.1 方案对比：Ilia vs YifanLiu（2026-11-11 确认）
+
+**核心共通点**：两边都认识到「demo 太少，rollout 数据才是扩展泛化的关键」——Yifan 走离线 RFT 飞轮，Ilia 走 AWR + 自价值驱动的在线 RL。
+
+| 维度 | Ilia（#1 sim / #2 real） | YifanLiu（17th） |
+|---|---|---|
+| 策略类型 | **VLA + RL**（自价值预测 + 失败检测 + 候选选择） | **X-VLA + RFT 数据飞轮** |
+| 失败处理 | 同一网络实时判断"我在失败"，切换候选动作 | 靠离线 RFT 回灌，不做实时检测 |
+| 训练架构 | 异步分布式，HF Hub 协调 rollout 和训练 | 单机，算力受限只做 ~100 条 rollout |
+| 推理层 | Thompson sampling 自动调超参 | 无 |
+| 真机 | sim2real 一周搞定：DAgger HIL + 相机对齐工具 + 强增强 | 没上真机 |
+| 开源 | **代码 + 模型权重 + 报告 + 视频全开源** | 只有主页描述 |
+
+**Ilia 方案核心架构**（我们的复现目标）：
+
+```
+同一个 VLA 网络 → 同时输出：动作 / 成功概率 / 任务进度 / 未来相关量
+  ↓
+  ├── Advantage estimation（算 advantage 做 RL）
+  ├── Live failure detection（实时失败检测）
+  └── Candidate selection（候选动作选择）
+工程优化：AWR + RECAP（flow-matching VLA）、异步分布式训练、
+         Thompson sampling 推理调参、sim2real（相机对齐 + 增强 + DAgger）
+```
+
+**对本项目的影响**：Stage 3 的「自价值预测 + 失败检测 + 候选选择」就是 Ilia 的核心组件，照 arXiv 2606.27163 的消融表复现。真机阶段直接抄他 sim2real 工具链。
 
 ## 7. 为什么不直接上真机
 
