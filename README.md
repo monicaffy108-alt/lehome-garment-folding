@@ -90,6 +90,14 @@ progress) while missing the success criterion.
 | 3 | + candidate selection | _pending_ |
 | 4 | flywheel, 10² trajectories | _pending_ |
 
+### Demo
+
+Successful fold — ACT `last` checkpoint, top-down camera (one eval rollout, ~12 s @ 10 fps):
+
+![ACT folding a long-sleeve top](assets/act_success_top.gif)
+
+Full-resolution rollouts (3 camera views, success + failure) are attached to the Release.
+
 Notes on the failures: they cluster on high-return episodes (Seen_5–9, returns 86–199),
 i.e. the policy folds substantially but the final state fails the success check — the
 known ACT failure mode this project's Stage 3 (self-value prediction) targets.
