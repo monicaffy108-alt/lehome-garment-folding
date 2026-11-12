@@ -11,7 +11,8 @@ where it fails, then add the mechanism the winning entry relied on and quantify 
 **Stage 0 + Stage 1 complete** (2026-11-12). The ACT baseline is trained and evaluated:
 **top_long = 83.3% / 75.0%** over two independent 12-episode evaluation runs (random-policy
 baseline: 0.0%). Numbers, protocol and every environment pitfall hit on the way are recorded
-below.
+below. Trained checkpoint and eval-rollout videos are attached to
+[Release `v0.1.0-stage1`](https://github.com/monicaffy108-alt/lehome-garment-folding/releases/tag/v0.1.0-stage1).
 
 ## Why this exists
 
