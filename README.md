@@ -85,7 +85,7 @@ progress) while missing the success criterion.
 | 1 | **ACT baseline, top_long — run 1** (12 episodes) | **83.33% success** (10/12), return 115.4 ± 23.1 |
 | 1 | **ACT baseline, top_long — run 2** (12 episodes) | **75.00% success** (9/12), return 124.2 ± 30.6 |
 | 1 | ACT, generalization to Unseen variants | run 1: 2/2 succeeded; full per-variant tables in console logs |
-| 2 | **Diffusion Policy, top_long — 030000 checkpoint** (6 episodes before cloth-reset hang) | **0.00% success** (0/6), return 124.3 ± 37.0 |
+| 2 | **Diffusion Policy, top_long — 030000 checkpoint** (12/12 episodes, per-episode env to avoid cloth-reset segfaults) | **8.33% success** (1/12, Seen_1 only), return 147.7 ± 29.8 |
 | 3 | + self-value failure detection | _pending_ |
 | 3 | + candidate selection | _pending_ |
 | 4 | flywheel, 10² trajectories | _pending_ |
@@ -176,14 +176,15 @@ cloth manipulation than diffusion.
   (loss 3.305 → 0.160); evaluated `last` checkpoint over two 12-episode runs —
   83.33% and 75.00% success (run 1: 2/2 on the Unseen variants). Eval videos archived
   in `outputs/eval_videos`.
-- 2026-11-13 — Stage 2 complete (negative result): Diffusion Policy trained 30k steps
-  @ batch 4 on RTX 5070 (OOM at batch 16; loss 0.960 → 0.000). Evaluated checkpoint
-  030000 — **0.00% success over 6 episodes** (the Isaac Sim cloth reset for `Top_Long_Seen_6`
-  hung after 600 steps, so run was truncated). DP return 124.3 ± 37.0 — same range as random,
-  no folding progress ever triggers the final success check (distances 24–26 cm vs 7–11 cm
-  thresholds). Conclusion: ACT's action-chunking + transformer structure is the right
-  baseline for this task; DP diffusion over raw joint targets is a poor fit for long-horizon
-  cloth manipulation. Stage 3 (self-value prediction) moves forward from ACT.
+- 2026-11-13 — Stage 2 complete: Diffusion Policy trained 30k steps @ batch 4 on RTX 5070
+  (OOM at batch 16; loss 0.960 → 0.000). `switch_garment()` in the official evaluator
+  segfaults inside PhysX cloth teardown on some garments; fixed by spawning one fresh
+  env per garment (12 separate process invocations). Final numbers — **8.33% success
+  (1/12, only Top_Long_Seen_1)**, return 147.7 ± 29.8. DP return is *higher* than ACT's but
+  the only success happened on Seen_1, where the distances narrowly cleared the thresholds;
+  11/12 episodes never got within 5–15 cm of the success thresholds. Conclusion: ACT's
+  action-chunking + transformer structure is the correct baseline for this task; DP
+  diffusion over raw joint targets is a poor fit for long-horizon cloth manipulation.
 
 ## License
 
