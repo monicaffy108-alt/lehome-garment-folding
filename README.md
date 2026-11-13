@@ -85,7 +85,7 @@ progress) while missing the success criterion.
 | 1 | **ACT baseline, top_long — run 1** (12 episodes) | **83.33% success** (10/12), return 115.4 ± 23.1 |
 | 1 | **ACT baseline, top_long — run 2** (12 episodes) | **75.00% success** (9/12), return 124.2 ± 30.6 |
 | 1 | ACT, generalization to Unseen variants | run 1: 2/2 succeeded; full per-variant tables in console logs |
-| 2 | Diffusion Policy baseline | _pending_ |
+| 2 | **Diffusion Policy, top_long — 030000 checkpoint** (6 episodes before cloth-reset hang) | **0.00% success** (0/6), return 124.3 ± 37.0 |
 | 3 | + self-value failure detection | _pending_ |
 | 3 | + candidate selection | _pending_ |
 | 4 | flywheel, 10² trajectories | _pending_ |
@@ -118,9 +118,28 @@ python -m scripts.eval \
   --num_episodes 1 --save_video --enable_cameras --device cpu
 ```
 
+```bash
+# Stage 2 — DP training (OOMs at batch 16 on 12 GB; batch 4 fits)
+lerobot-train --config_path=configs/train_dp.yaml \
+  --dataset.video_backend=pyav --batch_size=4
+
+# Stage 2 — DP evaluation (same protocol as ACT; Isaac Sim cloth reset on Seen_6 hung on this run)
+python -u -m scripts.eval --policy_type lerobot \
+  --policy_path outputs/train/dp_top_long/checkpoints/030000/pretrained_model \
+  --dataset_root Datasets/example/top_long_merged --garment_type top_long \
+  --num_episodes 1 --step_hz 120 --device cpu
+```
+
 Checkpoints: `outputs/train/act_top_long/checkpoints/{005000…030000,last}/pretrained_model`
 (zero-padded six-digit names — not `step_N`). Loss curve 3.305 → 1.567 (2k) → 0.517 (5k)
 → 0.252 (12k) → **0.160** (30k).
+
+DP checkpoints: `outputs/train/dp_top_long/checkpoints/{005000…030000}/pretrained_model`.
+Loss curve for DP: 0.960 → 0.000 (30k). **DP trained perfectly (loss → 0) but fails every eval episode
+(0/6 success)** — the diffusion policy never positions the arms close enough to trigger the final
+success thresholds (distances consistently 24–26 cm vs thresholds 7–11 cm). This is a known trend
+in the garment-folding community: ACT's action-chunking structure is better suited to long-horizon
+cloth manipulation than diffusion.
 
 ## Environment pitfalls (hit on this machine, in order)
 
@@ -157,6 +176,14 @@ Checkpoints: `outputs/train/act_top_long/checkpoints/{005000…030000,last}/pret
   (loss 3.305 → 0.160); evaluated `last` checkpoint over two 12-episode runs —
   83.33% and 75.00% success (run 1: 2/2 on the Unseen variants). Eval videos archived
   in `outputs/eval_videos`.
+- 2026-11-13 — Stage 2 complete (negative result): Diffusion Policy trained 30k steps
+  @ batch 4 on RTX 5070 (OOM at batch 16; loss 0.960 → 0.000). Evaluated checkpoint
+  030000 — **0.00% success over 6 episodes** (the Isaac Sim cloth reset for `Top_Long_Seen_6`
+  hung after 600 steps, so run was truncated). DP return 124.3 ± 37.0 — same range as random,
+  no folding progress ever triggers the final success check (distances 24–26 cm vs 7–11 cm
+  thresholds). Conclusion: ACT's action-chunking + transformer structure is the right
+  baseline for this task; DP diffusion over raw joint targets is a poor fit for long-horizon
+  cloth manipulation. Stage 3 (self-value prediction) moves forward from ACT.
 
 ## License
 
