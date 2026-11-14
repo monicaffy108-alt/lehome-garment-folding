@@ -86,8 +86,10 @@ progress) while missing the success criterion.
 | 1 | **ACT baseline, top_long — run 2** (12 episodes) | **75.00% success** (9/12), return 124.2 ± 30.6 |
 | 1 | ACT, generalization to Unseen variants | run 1: 2/2 succeeded; full per-variant tables in console logs |
 | 2 | **Diffusion Policy, top_long — 030000 checkpoint** (12/12 episodes, per-episode env to avoid cloth-reset segfaults) | **8.33% success** (1/12, Seen_1 only), return 147.7 ± 29.8 |
-| 3 | + self-value failure detection | _pending_ |
-| 3 | + candidate selection | _pending_ |
+| 3 | **ACT + progress head, top_long — v3 030000** (12 episodes) | **83.33% success** (10/12; Seen 9/10, Unseen 1/2), return 128.1 ± 22.7 |
+| 3 | progress-head calibration check | failed episodes score **higher** (0.952) than successes (0.902) → the head tracks demo phase, not task success |
+| 3 | + self-value failure detection | _not usable — head is miscalibrated (see Stage 3 note)_ |
+| 3 | + candidate selection | _pending (blocked on calibration)_ |
 | 4 | flywheel, 10² trajectories | _pending_ |
 
 ### Demo
@@ -101,6 +103,27 @@ Full-resolution rollouts (3 camera views, success + failure) are attached to the
 Notes on the failures: they cluster on high-return episodes (Seen_5–9, returns 86–199),
 i.e. the policy folds substantially but the final state fails the success check — the
 known ACT failure mode this project's Stage 3 (self-value prediction) targets.
+
+### Stage 3 note — progress head
+
+A small MLP head (512→256→1, sigmoid, ~0.2 M params) was attached to the ACT encoder's
+observation tokens (robot state + image patches; the VAE latent token is *excluded* because
+it is sampled from the prior at inference and therefore carries no information there).
+It is trained alongside the action loss with an MSE term,
+`progress_loss_weight = 1.0`, against the label `frame_index / (episode_length - 1)`.
+30k steps @ batch 8, best-of-run loss 0.156, `progress_loss` 2e-4.
+
+Two outcomes:
+
+1. **The action policy is unaffected.** 10/12 (83.33%) — equal to the best ACT baseline.
+2. **The signal is miscalibrated for failure detection.** Failures score 0.975 and 0.928
+   progress, while successes average 0.902 (one success ends at 0.675). The head learned
+   "how far into the demonstrated motion am I", not "did the fold actually succeed".
+
+Root cause: all 250 training episodes are successful human demonstrations, so the label is
+a proxy for *time*, not outcome. Candidate selection and early stopping — both need a
+monotone success signal — cannot be built on it. This is exactly the gap Stage 4 (sampling
+real rollouts and labelling them with their actual outcome) is meant to close.
 
 ## Reproduction commands
 
@@ -185,6 +208,15 @@ cloth manipulation than diffusion.
   11/12 episodes never got within 5–15 cm of the success thresholds. Conclusion: ACT's
   action-chunking + transformer structure is the correct baseline for this task; DP
   diffusion over raw joint targets is a poor fit for long-horizon cloth manipulation.
+- 2026-11-14 — Stage 3 complete: ACT + progress head trained 30k steps @ batch 8
+  (loss 3.31 → 0.156, progress MSE 6e-4 → 2e-4). Three training runs were needed:
+  v1/v2 fed `progress_label` that the LeRobot preprocessor silently dropped (so the head
+  never trained, output pinned at 0.5); v3 also moved the head off the VAE latent token,
+  which it had been reading as a training-only shortcut. Final eval (12 episodes, GUI mode):
+  **83.33% success**, return 128.1 ± 22.7. The head converged but is *anti*-correlated with
+  success on the two failures (0.975 / 0.928 vs. 0.902 mean for successes), so failure
+  detection and candidate selection stay blocked until Stage 4 provides outcome-labelled
+  rollouts.
 
 ## License
 
