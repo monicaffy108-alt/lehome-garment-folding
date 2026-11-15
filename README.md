@@ -8,11 +8,25 @@ where it fails, then add the mechanism the winning entry relied on and quantify 
 
 ## Status
 
-**Stage 0 + Stage 1 complete** (2026-11-12). The ACT baseline is trained and evaluated:
-**top_long = 83.3% / 75.0%** over two independent 12-episode evaluation runs (random-policy
-baseline: 0.0%). Numbers, protocol and every environment pitfall hit on the way are recorded
-below. Trained checkpoint and eval-rollout videos are attached to
+**Stages 0–3 complete, Stage 4 in progress** (2026-11-15). The ACT baseline is trained and
+evaluated: **top_long = 83.3% / 75.0%** over two independent 12-episode evaluation runs
+(random-policy baseline: 0.0%); Diffusion Policy gets 8.3% on the same protocol. Stage 3's
+self-value head learned *time*, not *success*; Stage 4 retrains the same head on
+outcome-labelled rollouts and it now separates success from failure at **AUC 0.886**.
+Numbers, protocol and every environment pitfall hit on the way are recorded below. Trained
+checkpoint and eval-rollout videos are attached to
 [Release `v0.1.0-stage1`](https://github.com/monicaffy108-alt/lehome-garment-folding/releases/tag/v0.1.0-stage1).
+
+What is in this repository:
+
+| Path | Content |
+|---|---|
+| `scripts/stage4_train_value_head.py` | the Stage 4 trainer (frozen ACT backbone, outcome-BCE on the value head) |
+| `configs/train_act_stage3.yaml` | Stage 3 training config (`use_progress_head`, `progress_loss_weight`) |
+| `patches/lerobot_act_progress_head.diff` | the four LeRobot 0.4.3 files changed to add the head (`git apply` inside site-packages) |
+| `patches/lehome_evaluator_rollouts.diff` | official-evaluator changes: outcome-labelled rollout recording, dataset `finalize()`, `--device` fix |
+| `results/stage4_value_head.log` | training + train-set scoring log |
+| `results/stage4_v4_eval_summary.txt` | per-episode value scores on 12 held-out rollouts |
 
 ## Why this exists
 
@@ -88,9 +102,11 @@ progress) while missing the success criterion.
 | 2 | **Diffusion Policy, top_long — 030000 checkpoint** (12/12 episodes, per-episode env to avoid cloth-reset segfaults) | **8.33% success** (1/12, Seen_1 only), return 147.7 ± 29.8 |
 | 3 | **ACT + progress head, top_long — v3 030000** (12 episodes) | **83.33% success** (10/12; Seen 9/10, Unseen 1/2), return 128.1 ± 22.7 |
 | 3 | progress-head calibration check | failed episodes score **higher** (0.952) than successes (0.902) → the head tracks demo phase, not task success |
-| 3 | + self-value failure detection | _not usable — head is miscalibrated (see Stage 3 note)_ |
+| 3 | + self-value failure detection | _not usable with the Stage 3 head — miscalibrated (see Stage 3 note)_ |
 | 3 | + candidate selection | _pending (blocked on calibration)_ |
-| 4 | flywheel, 10² trajectories | _pending_ |
+| 4 | outcome-labelled rollout collection, top_long | 48 rollouts, **38 success / 10 failure (79.2%)**, 6374 frames used for training |
+| 4 | **value head retrain (frozen backbone, weighted BCE), v4 030000** | train-set episode AUC **1.000**; 12 held-out rollouts AUC **0.886** (successes 0.949 mean, failures 0.516 mean) |
+| 4 | flywheel, 10² trajectories | _pending — rollouts exist, retraining the policy on them is next_ |
 
 ### Demo
 
@@ -125,6 +141,40 @@ a proxy for *time*, not outcome. Candidate selection and early stopping — both
 monotone success signal — cannot be built on it. This is exactly the gap Stage 4 (sampling
 real rollouts and labelling them with their actual outcome) is meant to close.
 
+### Stage 4 note — value head
+
+The same `progress_head` module is reused; only the supervision changes. The ACT backbone is
+frozen (`requires_grad = False`, 51 M params), so the validated action policy is untouched and
+the emitted action chunks are bit-identical before and after. The head
+(512→256→1→sigmoid, ~0.2 M params) is trained with a weighted BCE on the *outcome* of the
+rollout that produced each frame.
+
+Training data: 48 rollouts (4 per garment × 12 garments) recorded with
+`--save_all_episodes --rollout_labels`, i.e. **failures kept** — 38 successes / 10 failures.
+Frames are strided by 3 (consecutive frames are near-duplicates and every sample costs a full
+ACT forward), leaving 6374 frames (4374 success / 2000 failure). Class weights are computed on
+*frames*, not episodes, so each class contributes equally: `w_success = 0.73`,
+`w_fail = 1.59`. 3 epochs @ batch 8, lr 1e-3, BCE 0.215 → 0.055.
+
+Outcome on the 12 held-out rollouts (`results/stage4_v4_eval_summary.txt`):
+
+- **train set: episode-level AUC 1.000** — every success frames score 0.89–0.99, every
+  failure 0.00–0.05.
+- **held out: AUC 0.886** — successes mean 0.949, failures mean 0.516. This flips the Stage 3
+  result (failures 0.952 > successes 0.902) into the correct direction.
+- The remaining error is a single failure that survives 600 steps before failing and is scored
+  0.986 — a trajectory that looks like a successful fold for its whole length. Frames carry no
+  information about what happens *after* the frame, so this tail is not separable from state
+  alone at this data scale.
+
+The 58.33% success rate on this particular run is run-to-run physics variance, not a
+regression: the head adds nothing to the action path (see the note in the summary file).
+
+What this buys, and what it does not: the signal is now usable for **early termination**
+(stop when the value stops rising) and **candidate selection** (sample several action chunks,
+keep the one the value ranks highest). Both were blocked on Stage 3's miscalibration and are
+the next thing to measure; the numbers above are the gate they had to pass first.
+
 ## Reproduction commands
 
 ```bash
@@ -151,6 +201,36 @@ python -u -m scripts.eval --policy_type lerobot \
   --policy_path outputs/train/dp_top_long/checkpoints/030000/pretrained_model \
   --dataset_root Datasets/example/top_long_merged --garment_type top_long \
   --num_episodes 1 --step_hz 120 --device cpu
+```
+
+```bash
+# Stage 3/4 — apply the LeRobot patch (adds the auxiliary head; run inside the active venv)
+patch -p1 -d .venv/lib/python3.11/site-packages < patches/lerobot_act_progress_head.diff
+
+# Stage 3 — train ACT + progress head (masked MSE on frame_index / (episode_length - 1))
+lerobot-train --config_path=configs/train_act_stage3.yaml --dataset.video_backend=pyav
+```
+
+```bash
+# Stage 4 — collect outcome-labelled rollouts (one garment per process; failures are kept)
+python -u -m scripts.eval --policy_type lerobot \
+  --policy_path outputs/train/act_stage3_v3/checkpoints/030000/pretrained_model \
+  --dataset_root Datasets/example/top_long_merged --garment_type top_long \
+  --num_episodes 4 --save_datasets --save_all_episodes \
+  --rollout_labels stage4_rollouts/Top_Long_Seen_0.jsonl \
+  --skip_garments Top_Long_Seen_1,... --device cpu
+
+# Stage 4 — retrain the value head only, then export a patched checkpoint
+python scripts/stage4_train_value_head.py \
+  --checkpoint outputs/train/act_stage3_v3/checkpoints/030000/pretrained_model \
+  --dataset_root Datasets/stage4_rollouts --rollout_root stage4_rollouts \
+  --export_checkpoint outputs/train/act_stage3_v4/checkpoints/030000/pretrained_model
+
+# Stage 4 — score the held-out rollouts with the new head
+python -u -m scripts.eval --policy_type lerobot \
+  --policy_path outputs/train/act_stage3_v4/checkpoints/030000/pretrained_model \
+  --dataset_root Datasets/example/top_long_merged --garment_type top_long \
+  --num_episodes 1 --device cpu
 ```
 
 Checkpoints: `outputs/train/act_top_long/checkpoints/{005000…030000,last}/pretrained_model`
@@ -188,6 +268,18 @@ cloth manipulation than diffusion.
 8. **Eval quirks**: first Isaac Sim launch compiles shaders (5–10 min of silence, don't kill);
    the PhysX particle-cloth warnings are benign; checkpoint dirs are zero-padded (`005000`);
    `--save_video` filenames are always `episode0_*` and overwrite each other.
+9. **`--device` selects the physics device, not just the torch device.** Running rollout
+   collection on `cuda` puts the cloth in an out-of-distribution layout at reset — the
+   top-camera frame averages ~136 instead of ~177 — and success drops from 83% to **0%**
+   with no error message at all. Always pass `--device cpu` for evaluation and rollout
+   collection; only training belongs on the GPU. (This is why
+   `scripts/eval_policy/lerobot_policy.py` also overrides `policy_cfg.device`, otherwise the
+   checkpoint's own `device` field forces CUDA back on.)
+10. **Recorded datasets are unusable unless `finalize()` is called.** LeRobot keeps the data
+    parquet writer open; without `eval_dataset.finalize()` the file has no footer, so every
+    state/action frame is unreadable and `meta/episodes` is missing — while the per-episode
+    videos look perfectly complete, which makes the failure easy to miss. 12/12 garments were
+    silently corrupted this way before the fix landed in `run_evaluation_loop`.
 
 ## Log
 
@@ -217,6 +309,14 @@ cloth manipulation than diffusion.
   success on the two failures (0.975 / 0.928 vs. 0.902 mean for successes), so failure
   detection and candidate selection stay blocked until Stage 4 provides outcome-labelled
   rollouts.
+- 2026-11-15 — Stage 4: 48 outcome-labelled rollouts collected (38 success / 10 failure,
+  79.2%; 4 episodes per garment, one garment per process, failures kept). Two blockers had to
+  be fixed first: the recorder never called `finalize()` (every parquet unreadable) and
+  rollout collection on `cuda` produced 0% success because `--device` also switches the
+  physics backend (see pitfalls 9–10). Value head retrained on the frozen backbone with
+  weighted BCE — train-set AUC 1.000, **held-out AUC 0.886** (successes 0.949 vs failures
+  0.516 mean), i.e. the Stage 3 sign flip is gone. Early termination and candidate selection
+  are unblocked and are the next measurement.
 
 ## License
 

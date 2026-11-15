@@ -1,0 +1,275 @@
+diff --git a/scripts/eval_policy/lerobot_policy.py b/scripts/eval_policy/lerobot_policy.py
+index ee23d3e..d547450 100644
+--- a/scripts/eval_policy/lerobot_policy.py
++++ b/scripts/eval_policy/lerobot_policy.py
+@@ -65,7 +65,9 @@ class LeRobotPolicy(BasePolicy):
+             self.input_features = set(policy_cfg.input_features.keys())
+             self._filter_metadata(meta, self.input_features)
+ 
+-        # 4. Create Policy
++        # 4. Create Policy (load straight onto the requested device; the checkpoint's own
++        #    device field would otherwise force CUDA even when --device cpu is passed)
++        policy_cfg.device = str(self.device)
+         self.policy = make_policy(policy_cfg, ds_meta=meta)
+         self.policy.eval()
+         self.policy.to(self.device)
+@@ -104,18 +106,29 @@ class LeRobotPolicy(BasePolicy):
+ 
+         # 2. Preprocess (Numpy -> Tensor Batch, Normalize, etc.)
+         batch_obs = self._process_observation(observation)
+-        
++
+         # 3. Inference
+         with torch.inference_mode():
+             batch_action = self.policy.select_action(batch_obs)
+-            
++
+         # 4. Postprocess (Un-normalize)
+         if self.postprocessor:
+             batch_action = self.postprocessor(batch_action)
+-            
++
+         # 5. Convert to Numpy (Remove batch dimension)
+         return batch_action.squeeze(0).cpu().numpy()
+ 
++    def get_last_progress(self) -> float | None:
++        """Stage 3: Get the predicted task progress from the last forward pass.
++
++        Returns:
++            progress: Float in [0, 1] representing predicted task completion,
++                      or None if progress head is not available.
++        """
++        if hasattr(self.policy, '_last_progress') and self.policy._last_progress is not None:
++            return self.policy._last_progress.item()
++        return None
++
+     # --------------------------------------------------------------------------
+     # Internal Helper Methods
+     # --------------------------------------------------------------------------
+diff --git a/scripts/utils/evaluation.py b/scripts/utils/evaluation.py
+index 53ddbbe..60f0184 100644
+--- a/scripts/utils/evaluation.py
++++ b/scripts/utils/evaluation.py
+@@ -1,5 +1,6 @@
+ import os
+ import argparse
++import json
+ import gymnasium as gym
+ import torch
+ import numpy as np
+@@ -123,6 +124,8 @@ def run_evaluation_loop(
+         extra_steps = 0
+         success_flag = False
+         success = torch.tensor(False)
++        progress_history = []  # Stage 3: Track predicted progress
++        early_stopped = False  # Stage 3: Whether the episode was cut short by failure detection
+ 
+         for st in range(args.max_steps):
+             if rate_limiter:
+@@ -132,6 +135,13 @@ def run_evaluation_loop(
+             # Input: Numpy Dict -> Output: Numpy Array
+             action_np = policy.select_action(observation_dict)
+ 
++            # Stage 3: Track predicted progress
++            progress = None
++            if hasattr(policy, 'get_last_progress'):
++                progress = policy.get_last_progress()
++            if progress is not None:
++                progress_history.append(progress)
++
+             # 4. Prepare Action for Environment (Tensor)
+             # Convert numpy action to tensor for Isaac Lab
+             action = torch.from_numpy(action_np).float().to(args.device).unsqueeze(0)
+@@ -199,22 +209,73 @@ def run_evaluation_loop(
+                 if extra_steps <= 0:
+                     break
+ 
++            # Stage 3: Early failure detection. The progress head reports how far the
++            # garment has been folded; if that number stops moving for `progress_patience`
++            # steps, the rollout is treated as a failure and terminated early.
++            if (
++                args.fail_detection
++                and not success_flag
++                and len(progress_history) > args.progress_patience
++            ):
++                delta = progress_history[-1] - progress_history[-1 - args.progress_patience]
++                if delta < args.progress_min_delta:
++                    logger.info(
++                        f"  EarlyStop at step {st + 1}: progress stalled "
++                        f"(delta={delta:.4f} over {args.progress_patience} steps)"
++                    )
++                    early_stopped = True
++                    break
++
+         # --- End of Episode Handling ---
+         is_success = success.item() if success_flag else False
+ 
++        # Stage 3: Log progress statistics
++        progress_final = None
++        progress_max = None
++        progress_stalled = None
++        if progress_history:
++            progress_arr = np.array(progress_history)
++            progress_final = progress_arr[-1]
++            progress_max = progress_arr.max()
++            progress_stalled = (progress_arr[-50:].std() < 0.01) if len(progress_arr) >= 50 else False
++            logger.info(
++                f"  Progress: final={progress_final:.3f}, max={progress_max:.3f}, "
++                f"stalled={progress_stalled}, steps_with_progress={len(progress_history)}"
++            )
++
+         # Save Datasets
+-        if args.save_datasets:
+-            if success_flag:
+-                eval_dataset.save_episode()
+-                append_episode_initial_pose(
+-                    json_path,
+-                    episode_index,
+-                    object_initial_pose,
+-                    garment_name=garment_name,
+-                )
+-                episode_index += 1
+-            else:
+-                eval_dataset.clear_episode_buffer()
++        # Stage 4: `--save_all_episodes` keeps failed rollouts too, so the value head can
++        # be trained on outcome-labelled data (successes alone cannot teach failure).
++        dataset_episode = None
++        if args.save_datasets and (success_flag or args.save_all_episodes):
++            eval_dataset.save_episode()
++            append_episode_initial_pose(
++                json_path,
++                episode_index,
++                object_initial_pose,
++                garment_name=garment_name,
++            )
++            dataset_episode = episode_index
++            episode_index += 1
++        elif args.save_datasets:
++            eval_dataset.clear_episode_buffer()
++
++        # Stage 4: Append one outcome-labelled record per rollout.
++        if args.rollout_labels:
++            Path(args.rollout_labels).parent.mkdir(parents=True, exist_ok=True)
++            record = {
++                "garment": garment_name,
++                "rollout": i,
++                "dataset_episode": dataset_episode,
++                "success": bool(is_success),
++                "return": float(episode_return),
++                "length": int(episode_length),
++                "early_stop": bool(early_stopped),
++                "progress_final": None if progress_final is None else float(progress_final),
++                "progress_max": None if progress_max is None else float(progress_max),
++            }
++            with open(args.rollout_labels, "a", encoding="utf-8") as f:
++                f.write(json.dumps(record) + "\n")
+ 
+         # Save Videos (Using generic util)
+         if args.save_video:
+@@ -227,12 +288,24 @@ def run_evaluation_loop(
+ 
+         # Log Metrics
+         all_episode_metrics.append(
+-            {"return": episode_return, "length": episode_length, "success": is_success}
++            {
++                "return": episode_return,
++                "length": episode_length,
++                "success": is_success,
++                "early_stop": early_stopped,
++            }
+         )
+         logger.info(
+-            f"Episode {i + 1}/{args.num_episodes}: Return={episode_return:.2f}, Length={episode_length}, Success={is_success}"
++            f"Episode {i + 1}/{args.num_episodes}: Return={episode_return:.2f}, Length={episode_length}, "
++            f"Success={is_success}, EarlyStop={early_stopped}"
+         )
+ 
++    # LeRobot keeps the data parquet writer open until finalize() is called. Without it the
++    # file has no footer and every recorded state/action frame is unreadable, even though
++    # the videos (written per episode) look complete.
++    if eval_dataset is not None:
++        eval_dataset.finalize()
++
+     return all_episode_metrics
+ 
+ 
+@@ -357,6 +430,12 @@ def eval(args: argparse.Namespace, simulation_app: Any) -> None:
+         for name in names:
+             eval_list.append((name, "Release"))
+ 
++    skip = {n.strip() for n in getattr(args, "skip_garments", "").split(",") if n.strip()}
++    if skip:
++        before = len(eval_list)
++        eval_list = [(n, s) for (n, s) in eval_list if n not in skip]
++        logger.info(f"Skipping garments: {sorted(skip)} ({before - len(eval_list)} removed)")
++
+     logger.info(f"Loaded {len(eval_list)} garments for category: {args.garment_type}")
+ 
+     if not eval_list:
+@@ -382,7 +461,9 @@ def eval(args: argparse.Namespace, simulation_app: Any) -> None:
+ 
+             # Switch Garment Logic
+             if garment_idx > 0:
+-                if hasattr(env, "switch_garment"):
++                if hasattr(env, "switch_garment") and not getattr(
++                    args, "no_switch_garment", False
++                ):
+                     env.switch_garment(garment_name, garment_stage)
+                     env.reset()
+                     policy.reset()
+diff --git a/scripts/utils/parser.py b/scripts/utils/parser.py
+index 698e4bf..aa63bed 100644
+--- a/scripts/utils/parser.py
++++ b/scripts/utils/parser.py
+@@ -417,6 +417,51 @@ def setup_eval_parser() -> argparse.ArgumentParser:
+         default="fold the garment on the table",
+         help="Task description for VLA models (used in complementary_data).",
+     )
++    parser.add_argument(
++        "--no_switch_garment",
++        action="store_true",
++        default=False,
++        help="Recreate the whole env between garments instead of calling env.switch_garment(). "
++        "Works around a PhysX cloth segfault inside switch_garment on some garments.",
++    )
++    parser.add_argument(
++        "--skip_garments",
++        type=str,
++        default="",
++        help="Comma-separated garment names to skip, e.g. Top_Long_Seen_6,Top_Long_Seen_8.",
++    )
++    # Stage 3: Failure detection based on the predicted progress signal.
++    parser.add_argument(
++        "--fail_detection",
++        action="store_true",
++        default=False,
++        help="Terminate an episode early when the predicted task progress stops increasing.",
++    )
++    parser.add_argument(
++        "--progress_patience",
++        type=int,
++        default=100,
++        help="Number of steps without progress gain before declaring a stalled rollout.",
++    )
++    parser.add_argument(
++        "--progress_min_delta",
++        type=float,
++        default=0.01,
++        help="Minimum progress gain over the patience window to keep the rollout alive.",
++    )
++    # Stage 4: Outcome-labelled rollout collection for value-head training.
++    parser.add_argument(
++        "--save_all_episodes",
++        action="store_true",
++        default=False,
++        help="With --save_datasets, also keep failed rollouts (default: successes only).",
++    )
++    parser.add_argument(
++        "--rollout_labels",
++        type=str,
++        default="",
++        help="Append one JSON line per rollout (success, return, length, progress) to this file.",
++    )
+ 
+     # Record parameters
+     parser.add_argument(

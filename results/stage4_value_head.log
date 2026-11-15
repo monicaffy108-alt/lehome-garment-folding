@@ -1,0 +1,82 @@
+Loading weights from local directory
+episodes: 38 success / 10 fail
+frames: 6374 (4374 success / 2000 fail) -> w_success=0.73, w_fail=1.59
+/home/monicaffy/文档/Trae-CN/temp_20261110_01/lehome-challenge/.venv/lib/python3.11/site-packages/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we'll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+/home/monicaffy/文档/Trae-CN/temp_20261110_01/lehome-challenge/.venv/lib/python3.11/site-packages/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we'll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+/home/monicaffy/文档/Trae-CN/temp_20261110_01/lehome-challenge/.venv/lib/python3.11/site-packages/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we'll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+/home/monicaffy/文档/Trae-CN/temp_20261110_01/lehome-challenge/.venv/lib/python3.11/site-packages/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we'll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+epoch 1: bce=0.2148
+/home/monicaffy/文档/Trae-CN/temp_20261110_01/lehome-challenge/.venv/lib/python3.11/site-packages/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we'll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+/home/monicaffy/文档/Trae-CN/temp_20261110_01/lehome-challenge/.venv/lib/python3.11/site-packages/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we'll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+/home/monicaffy/文档/Trae-CN/temp_20261110_01/lehome-challenge/.venv/lib/python3.11/site-packages/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we'll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+/home/monicaffy/文档/Trae-CN/temp_20261110_01/lehome-challenge/.venv/lib/python3.11/site-packages/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we'll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+epoch 2: bce=0.0616
+/home/monicaffy/文档/Trae-CN/temp_20261110_01/lehome-challenge/.venv/lib/python3.11/site-packages/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we'll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+/home/monicaffy/文档/Trae-CN/temp_20261110_01/lehome-challenge/.venv/lib/python3.11/site-packages/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we'll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+/home/monicaffy/文档/Trae-CN/temp_20261110_01/lehome-challenge/.venv/lib/python3.11/site-packages/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we'll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+/home/monicaffy/文档/Trae-CN/temp_20261110_01/lehome-challenge/.venv/lib/python3.11/site-packages/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we'll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+/home/monicaffy/文档/Trae-CN/temp_20261110_01/lehome-challenge/.venv/lib/python3.11/site-packages/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we'll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+epoch 3: bce=0.0549
+  Top_Long_Seen_0 ep0: success=True value=0.984 (n=22)
+  Top_Long_Seen_0 ep1: success=False value=0.018 (n=40)
+  Top_Long_Seen_0 ep2: success=True value=0.888 (n=21)
+  Top_Long_Seen_0 ep3: success=True value=0.986 (n=23)
+  Top_Long_Seen_1 ep0: success=True value=0.991 (n=26)
+  Top_Long_Seen_1 ep1: success=True value=0.992 (n=23)
+  Top_Long_Seen_1 ep2: success=True value=0.998 (n=23)
+  Top_Long_Seen_1 ep3: success=True value=0.991 (n=23)
+  Top_Long_Seen_2 ep0: success=True value=1.000 (n=22)
+  Top_Long_Seen_2 ep1: success=True value=0.995 (n=23)
+  Top_Long_Seen_2 ep2: success=True value=0.999 (n=23)
+  Top_Long_Seen_2 ep3: success=True value=0.998 (n=23)
+  Top_Long_Seen_3 ep0: success=True value=0.998 (n=26)
+  Top_Long_Seen_3 ep1: success=False value=0.000 (n=40)
+  Top_Long_Seen_3 ep2: success=True value=0.979 (n=24)
+  Top_Long_Seen_3 ep3: success=True value=0.998 (n=27)
+  Top_Long_Seen_4 ep0: success=True value=0.989 (n=22)
+  Top_Long_Seen_4 ep1: success=True value=0.976 (n=23)
+  Top_Long_Seen_4 ep2: success=True value=0.982 (n=23)
+  Top_Long_Seen_4 ep3: success=True value=0.949 (n=23)
+  Top_Long_Seen_5 ep0: success=True value=0.989 (n=22)
+  Top_Long_Seen_5 ep1: success=True value=0.994 (n=23)
+  Top_Long_Seen_5 ep2: success=True value=0.970 (n=23)
+  Top_Long_Seen_5 ep3: success=True value=0.983 (n=23)
+  Top_Long_Seen_6 ep0: success=True value=0.955 (n=40)
+  Top_Long_Seen_6 ep1: success=False value=0.000 (n=40)
+  Top_Long_Seen_6 ep2: success=False value=0.010 (n=40)
+  Top_Long_Seen_6 ep3: success=False value=0.001 (n=40)
+  Top_Long_Seen_7 ep0: success=True value=0.894 (n=22)
+  Top_Long_Seen_7 ep1: success=False value=0.002 (n=40)
+  Top_Long_Seen_7 ep2: success=False value=0.009 (n=40)
+  Top_Long_Seen_7 ep3: success=True value=0.780 (n=25)
+  Top_Long_Seen_8 ep0: success=False value=0.028 (n=40)
+  Top_Long_Seen_8 ep1: success=True value=0.984 (n=23)
+  Top_Long_Seen_8 ep2: success=True value=0.897 (n=20)
+  Top_Long_Seen_8 ep3: success=True value=0.901 (n=23)
+  Top_Long_Seen_9 ep0: success=True value=0.995 (n=22)
+  Top_Long_Seen_9 ep1: success=True value=0.984 (n=23)
+  Top_Long_Seen_9 ep2: success=True value=0.992 (n=20)
+  Top_Long_Seen_9 ep3: success=True value=0.988 (n=23)
+  Top_Long_Unseen_0 ep0: success=True value=0.988 (n=22)
+  Top_Long_Unseen_0 ep1: success=True value=0.967 (n=23)
+  Top_Long_Unseen_0 ep2: success=True value=0.974 (n=20)
+  Top_Long_Unseen_0 ep3: success=True value=0.983 (n=23)
+  Top_Long_Unseen_1 ep0: success=False value=0.050 (n=40)
+  Top_Long_Unseen_1 ep1: success=True value=0.962 (n=23)
+  Top_Long_Unseen_1 ep2: success=True value=0.971 (n=23)
+  Top_Long_Unseen_1 ep3: success=False value=0.003 (n=40)
+episode-level AUC = 1.000
+exported -> outputs/train/act_stage3_v4/checkpoints/030000/pretrained_model

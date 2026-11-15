@@ -1,0 +1,27 @@
+Stage 4 — value head on 12 held-out rollouts (2026-11-15)
+checkpoint: outputs/train/act_stage3_v4/checkpoints/030000/pretrained_model
+protocol:   1 episode per garment, 12 garment variants (10 Seen, 2 Unseen), --device cpu
+
+garment            value_final  value_max  steps  success  return
+Top_Long_Seen_0        0.790      1.000     326    True    114.75
+Top_Long_Seen_1        0.958      1.000     376    True    146.46
+Top_Long_Seen_2        0.999      1.000     326    True     68.25
+Top_Long_Seen_3        0.917      1.000     376    True    142.48
+Top_Long_Seen_4        0.980      1.000     376    True    142.83
+Top_Long_Seen_5        0.986      1.000     600    False   241.43
+Top_Long_Seen_6        0.579      1.000     600    False   138.89
+Top_Long_Seen_7        0.256      1.000     600    False   180.91
+Top_Long_Seen_8        0.757      0.909     600    False   324.75
+Top_Long_Seen_9        1.000      1.000     326    True    130.16
+Top_Long_Unseen_0      0.997      1.000     326    True    131.89
+Top_Long_Unseen_1      0.000      0.055     600    False   258.97
+
+success rate : 7/12 = 58.33%
+episode-level AUC (value separates success from failure): 31/35 = 0.886
+successes    : mean value 0.949 (range 0.790 - 1.000)
+failures     : mean value 0.516 (range 0.000 - 0.986)
+
+Note: the 58.33% success rate is *not* a regression from Stage 3's 83.33%. The value head
+adds no parameters to the action path and the ACT backbone is frozen, so the emitted actions
+are bit-identical; the gap is run-to-run variance in cloth reset / physics (the same
+checkpoint scored 10/12 and 9/12 on two earlier runs).

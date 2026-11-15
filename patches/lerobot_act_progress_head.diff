@@ -1,0 +1,125 @@
+--- a/lerobot/policies/act/configuration_act.py
++++ b/lerobot/policies/act/configuration_act.py
+@@ -132,6 +132,10 @@
+     dropout: float = 0.1
+     kl_weight: float = 10.0
+ 
++    # Stage 3: Self-value prediction heads (Ilia-style auxiliary outputs).
++    use_progress_head: bool = True
++    progress_loss_weight: float = 0.1
++
+     # Training preset
+     optimizer_lr: float = 1e-5
+     optimizer_weight_decay: float = 1e-4
+--- a/lerobot/policies/act/modeling_act.py
++++ b/lerobot/policies/act/modeling_act.py
+@@ -130,7 +130,8 @@
+             batch = dict(batch)  # shallow copy so that adding a key doesn't modify the original
+             batch[OBS_IMAGES] = [batch[key] for key in self.config.image_features]
+ 
+-        actions = self.model(batch)[0]
++        actions, _, progress = self.model(batch)
++        self._last_progress = progress  # Store for access in select_action
+         return actions
+ 
+     def forward(self, batch: dict[str, Tensor]) -> tuple[Tensor, dict]:
+@@ -139,7 +140,7 @@
+             batch = dict(batch)  # shallow copy so that adding a key doesn't modify the original
+             batch[OBS_IMAGES] = [batch[key] for key in self.config.image_features]
+ 
+-        actions_hat, (mu_hat, log_sigma_x2_hat) = self.model(batch)
++        actions_hat, (mu_hat, log_sigma_x2_hat), progress_hat = self.model(batch)
+ 
+         l1_loss = (
+             F.l1_loss(batch[ACTION], actions_hat, reduction="none") * ~batch["action_is_pad"].unsqueeze(-1)
+@@ -159,6 +160,13 @@
+         else:
+             loss = l1_loss
+ 
++        # Stage 3: Progress prediction loss (MSE between predicted and actual progress).
++        if self.config.use_progress_head and progress_hat is not None and "progress_label" in batch:
++            progress_label = batch["progress_label"].float().unsqueeze(-1)  # (B, 1)
++            progress_loss = F.mse_loss(progress_hat, progress_label)
++            loss_dict["progress_loss"] = progress_loss.item()
++            loss = loss + progress_loss * self.config.progress_loss_weight
++
+         return loss, loss_dict
+ 
+ 
+@@ -367,6 +375,16 @@
+         # Final action regression head on the output of the transformer's decoder.
+         self.action_head = nn.Linear(config.dim_model, self.config.action_feature.shape[0])
+ 
++        # Stage 3: Self-value prediction head (Ilia-style).
++        # Predicts task progress (0-1) from the encoder's latent token.
++        if config.use_progress_head:
++            self.progress_head = nn.Sequential(
++                nn.Linear(config.dim_model, config.dim_model // 2),
++                nn.ReLU(),
++                nn.Linear(config.dim_model // 2, 1),
++                nn.Sigmoid(),
++            )
++
+         self._reset_parameters()
+ 
+     def _reset_parameters(self):
+@@ -507,7 +525,16 @@
+ 
+         actions = self.action_head(decoder_out)
+ 
+-        return actions, (mu, log_sigma_x2)
++        # Stage 3: Predict task progress from the observation tokens.
++        # Token 0 is the projected VAE latent, which is sampled from the prior (random)
++        # at inference, so it cannot be used here. Tokens 1.. are the robot state and
++        # image patches, which are deterministic given the observation.
++        progress = None
++        if self.config.use_progress_head:
++            obs_summary = encoder_out[1:].mean(dim=0)  # (B, D)
++            progress = self.progress_head(obs_summary)  # (B, 1)
++
++        return actions, (mu, log_sigma_x2), progress
+ 
+ 
+ class ACTEncoder(nn.Module):
+--- a/lerobot/datasets/lerobot_dataset.py
++++ b/lerobot/datasets/lerobot_dataset.py
+@@ -1075,6 +1075,15 @@
+         # Add task as a string
+         task_idx = item["task_index"].item()
+         item["task"] = self.meta.tasks.iloc[task_idx].name
++
++        # Stage 3: progress label in [0, 1], reaching exactly 1.0 on the last frame
++        if self.meta.episodes is None:
++            self.meta.episodes = load_episodes(self.root)
++        ep_length = self.meta.episodes[ep_idx]["length"]
++        item["progress_label"] = (
++            item["frame_index"].float() / max(ep_length - 1, 1)
++        ).clamp(0.0, 1.0)
++
+         return item
+ 
+     def __repr__(self):
+--- a/lerobot/scripts/lerobot_train.py
++++ b/lerobot/scripts/lerobot_train.py
+@@ -397,7 +397,12 @@
+     for _ in range(step, cfg.steps):
+         start_time = time.perf_counter()
+         batch = next(dl_iter)
++        # Stage 3: the preprocessor only keeps the keys it knows about, so pull the
++        # progress label out first and put it back afterwards.
++        progress_label = batch.pop("progress_label", None)
+         batch = preprocessor(batch)
++        if progress_label is not None:
++            batch["progress_label"] = progress_label
+         train_tracker.dataloading_s = time.perf_counter() - start_time
+ 
+         train_tracker, output_dict = update_policy(
+@@ -421,6 +426,8 @@
+ 
+         if is_log_step:
+             logging.info(train_tracker)
++            if output_dict and "progress_loss" in output_dict:
++                logging.info(f"progress_loss: {output_dict['progress_loss']:.4f}")
+             if wandb_logger:
+                 wandb_log_dict = train_tracker.to_dict()
+                 if output_dict:
