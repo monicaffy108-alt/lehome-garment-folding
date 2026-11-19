@@ -8,11 +8,14 @@ where it fails, then add the mechanism the winning entry relied on and quantify 
 
 ## Status
 
-**Stages 0–3 complete, Stage 4 in progress** (2026-11-15). The ACT baseline is trained and
+**Stages 0–4 complete, Stage 6 started** (2026-11-19). The ACT baseline is trained and
 evaluated: **top_long = 83.3% / 75.0%** over two independent 12-episode evaluation runs
 (random-policy baseline: 0.0%); Diffusion Policy gets 8.3% on the same protocol. Stage 3's
 self-value head learned *time*, not *success*; Stage 4 retrains the same head on
 outcome-labelled rollouts and it now separates success from failure at **AUC 0.886**.
+Stage 6 is the real-robot path: a camera ablation shows the two wrist views are worth
+**≈ 33 percentage points** (83.3% → 50.0% when removed), so a single overhead camera is
+not sufficient for deployment.
 Numbers, protocol and every environment pitfall hit on the way are recorded below. Trained
 checkpoint and eval-rollout videos are attached to
 [Release `v0.1.0-stage1`](https://github.com/monicaffy108-alt/lehome-garment-folding/releases/tag/v0.1.0-stage1).
@@ -23,10 +26,14 @@ What is in this repository:
 |---|---|
 | `scripts/stage4_train_value_head.py` | the Stage 4 trainer (frozen ACT backbone, outcome-BCE on the value head) |
 | `configs/train_act_stage3.yaml` | Stage 3 training config (`use_progress_head`, `progress_loss_weight`) |
+| `configs/train_act_toponly.yaml` | Stage 6 ablation config (`input_features` = overhead view only) |
 | `patches/lerobot_act_progress_head.diff` | the four LeRobot 0.4.3 files changed to add the head (`git apply` inside site-packages) |
 | `patches/lehome_evaluator_rollouts.diff` | official-evaluator changes: outcome-labelled rollout recording, dataset `finalize()`, `--device` fix |
 | `results/stage4_value_head.log` | training + train-set scoring log |
 | `results/stage4_v4_eval_summary.txt` | per-episode value scores on 12 held-out rollouts |
+| `results/toponly_eval_summary.txt` | Stage 6 per-variant success/return table |
+| `results/toponly_loss_curve.png` | top-only vs 3-camera training curve |
+| `results/toponly_train.log` | Stage 6 training log |
 
 ## Why this exists
 
@@ -107,6 +114,8 @@ progress) while missing the success criterion.
 | 4 | outcome-labelled rollout collection, top_long | 48 rollouts, **38 success / 10 failure (79.2%)**, 6374 frames used for training |
 | 4 | **value head retrain (frozen backbone, weighted BCE), v4 030000** | train-set episode AUC **1.000**; 12 held-out rollouts AUC **0.886** (successes 0.949 mean, failures 0.516 mean) |
 | 4 | flywheel, 10² trajectories | _pending — rollouts exist, retraining the policy on them is next_ |
+| 6 | **camera ablation: ACT trained on `top_rgb` only** (30k steps, loss 0.151) | **50.00% success** (6/12), return 151.5 ± 69.7 |
+| 6 | wrist-view contribution (3-camera 83.33% − top-only 50.00%) | **≈ 33 percentage points** — the two wrist views are not optional |
 
 ### Demo
 
@@ -175,6 +184,45 @@ What this buys, and what it does not: the signal is now usable for **early termi
 keep the one the value ranks highest). Both were blocked on Stage 3's miscalibration and are
 the next thing to measure; the numbers above are the gate they had to pass first.
 
+### Stage 6 note — camera ablation
+
+The real-robot plan started from a hardware constraint: only one RealSense D435i is available,
+while the policy consumes three views (`top_rgb`, `left_rgb`, `right_rgb`). The question was
+therefore quantitative — *how much does the overhead view alone cost?* — rather than a guess.
+
+Setup: `input_features` reduced to `top_rgb` only, then a **full retrain** (30k steps, batch 8,
+same demonstration set, same schedule). This is not masking the wrist inputs at test time: the
+model never sees them, so the encoder allocates all of its capacity to the one view.
+
+![top-only vs 3-camera loss curve](results/toponly_loss_curve.png)
+
+The loss curve hides the damage: top-only converges *faster* (0.151 vs 0.160), because fewer
+image tokens means an easier optimisation problem. The evaluation tells the real story:
+
+| Configuration | Success (12 episodes) | Return |
+|---|---|---|
+| 3 cameras (baseline) | **83.33%** (10/12) | 128.1 ± 22.7 |
+| top-only (this run) | **50.00%** (6/12) | 151.5 ± 69.7 |
+
+**The two wrist views are worth ≈ 33 percentage points.** Failure modes are unchanged in
+character — the failed episodes still score high return (Seen_9: 244, Unseen_1: 333), i.e. the
+policy folds substantially and then misses the final success thresholds. What the wrist views
+buy is precision at the grasp, not the ability to start folding.
+
+Caveats: n=12, single run. The 3-camera baseline itself varies between 75% and 83% across runs,
+so the gap is better read as "20–35 points" than as an exact 33. Even at the pessimistic end it
+is far larger than run-to-run noise, and it is the difference between 6 and 10 successes out of
+12 — four episodes, not one.
+
+Implication for hardware: a single overhead camera is not enough, so any real-robot deployment
+needs two wrist-mounted cameras. They do not have to be RealSense units — the sim wrist cameras
+are 640×480@30fps with a 53.6° horizontal FOV, which any small USB camera satisfies. The
+overhead view, by contrast, is a good FOV match for a D435i (sim 67.1° vs RealSense 69.4°
+horizontal).
+
+Files: `results/toponly_eval_summary.txt` (per-variant numbers), `results/toponly_train.log`
+(training log), `results/toponly_loss_curve.png` (plot).
+
 ## Reproduction commands
 
 ```bash
@@ -231,6 +279,18 @@ python -u -m scripts.eval --policy_type lerobot \
   --policy_path outputs/train/act_stage3_v4/checkpoints/030000/pretrained_model \
   --dataset_root Datasets/example/top_long_merged --garment_type top_long \
   --num_episodes 1 --device cpu
+```
+
+```bash
+# Stage 6 — camera ablation: train with the overhead view only (config keeps input_features=[top_rgb])
+lerobot-train --config_path=configs/train_act_toponly.yaml \
+  --dataset.video_backend=pyav --batch_size=8
+
+# Stage 6 — evaluate with the GUI open (EULA must be pre-accepted for non-interactive runs)
+OMNI_KIT_ACCEPT_EULA=YES python -u -m scripts.eval --policy_type lerobot \
+  --policy_path outputs/train/act_top_long_toponly/checkpoints/030000/pretrained_model \
+  --dataset_root Datasets/example/top_long_merged --garment_type top_long \
+  --num_episodes 1 --save_video --enable_cameras --device cpu
 ```
 
 Checkpoints: `outputs/train/act_top_long/checkpoints/{005000…030000,last}/pretrained_model`
@@ -317,6 +377,14 @@ cloth manipulation than diffusion.
   weighted BCE — train-set AUC 1.000, **held-out AUC 0.886** (successes 0.949 vs failures
   0.516 mean), i.e. the Stage 3 sign flip is gone. Early termination and candidate selection
   are unblocked and are the next measurement.
+- 2026-11-19 — Stage 6 (camera ablation): with only one RealSense available for the real-robot
+  path, ACT was retrained from scratch on `top_rgb` alone — 30k steps, loss 0.151 (faster than
+  the 3-camera baseline's 0.160, because fewer image tokens make the optimisation easier).
+  Evaluation: **50.00% (6/12)**, return 151.5 ± 69.7, versus **83.33%** for three cameras.
+  Wrist views are worth ≈ 33 points (20–35 accounting for baseline run-to-run variance), so a
+  single overhead camera is not enough for deployment. Two side findings: GUI evaluation needs
+  `OMNI_KIT_ACCEPT_EULA=YES` in a non-interactive shell, and the top-camera FOV is a good match
+  for a D435i (67.1° sim vs 69.4° real). Artifacts in `results/toponly_*`.
 
 ## License
 

@@ -1,0 +1,21 @@
+Stage 6 - camera ablation: ACT trained on top_rgb only (wrist views removed)
+Protocol: 12 episodes, 1 per garment variant, --device cpu, --enable_cameras
+Checkpoint: outputs/train/act_top_long_toponly/checkpoints/030000/pretrained_model
+Trained: 30k steps, final loss 0.151 (3-camera baseline: 0.160)
+
+3-camera ACT baseline (Stage 1/3): 83.33% (10/12)
+Top-only ACT (this run):          50.00% (6/12)  -> wrist views are worth ~33 pp
+
+Success Rate: 50.00%
+  Top_Long_Seen_0: Success Rate = 0.00%, Avg Return = 145.93
+  Top_Long_Seen_1: Success Rate = 100.00%, Avg Return = 98.91
+  Top_Long_Seen_2: Success Rate = 100.00%, Avg Return = 149.09
+  Top_Long_Seen_3: Success Rate = 0.00%, Avg Return = 130.64
+  Top_Long_Seen_4: Success Rate = 0.00%, Avg Return = 106.20
+  Top_Long_Seen_5: Success Rate = 100.00%, Avg Return = 120.97
+  Top_Long_Seen_6: Success Rate = 100.00%, Avg Return = 150.69
+  Top_Long_Seen_7: Success Rate = 0.00%, Avg Return = 108.07
+  Top_Long_Seen_8: Success Rate = 100.00%, Avg Return = 90.89
+  Top_Long_Seen_9: Success Rate = 0.00%, Avg Return = 244.06
+  Top_Long_Unseen_0: Success Rate = 100.00%, Avg Return = 139.65
+  Top_Long_Unseen_1: Success Rate = 0.00%, Avg Return = 333.06

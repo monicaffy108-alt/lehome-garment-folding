@@ -1,0 +1,221 @@
+INFO 2026-11-19 13:56:57 ot_train.py:195 {'batch_size': 8,
+ 'checkpoint_path': None,
+ 'dataset': {'episodes': None,
+             'image_transforms': {'enable': False,
+                                  'max_num_transforms': 3,
+                                  'random_order': False,
+                                  'tfs': {'affine': {'kwargs': {'degrees': [-5.0,
+                                                                            5.0],
+                                                                'translate': [0.05,
+                                                                              0.05]},
+                                                     'type': 'RandomAffine',
+                                                     'weight': 1.0},
+                                          'brightness': {'kwargs': {'brightness': [0.8,
+                                                                                   1.2]},
+                                                         'type': 'ColorJitter',
+                                                         'weight': 1.0},
+                                          'contrast': {'kwargs': {'contrast': [0.8,
+                                                                               1.2]},
+                                                       'type': 'ColorJitter',
+                                                       'weight': 1.0},
+                                          'hue': {'kwargs': {'hue': [-0.05,
+                                                                     0.05]},
+                                                  'type': 'ColorJitter',
+                                                  'weight': 1.0},
+                                          'saturation': {'kwargs': {'saturation': [0.5,
+                                                                                   1.5]},
+                                                         'type': 'ColorJitter',
+                                                         'weight': 1.0},
+                                          'sharpness': {'kwargs': {'sharpness': [0.5,
+                                                                                 1.5]},
+                                                        'type': 'SharpnessJitter',
+                                                        'weight': 1.0}}},
+             'repo_id': 'repo_act_toponly',
+             'revision': None,
+             'root': 'Datasets/example/top_long_merged',
+             'streaming': False,
+             'use_imagenet_stats': True,
+             'video_backend': 'pyav'},
+ 'env': None,
+ 'eval': {'batch_size': 50, 'n_episodes': 50, 'use_async_envs': False},
+ 'eval_freq': 20000,
+ 'job_name': 'act',
+ 'log_freq': 1000,
+ 'num_workers': 4,
+ 'optimizer': {'betas': [0.9, 0.999],
+               'eps': 1e-08,
+               'grad_clip_norm': 10.0,
+               'lr': 1e-05,
+               'type': 'adamw',
+               'weight_decay': 0.0001},
+ 'output_dir': 'outputs/train/act_top_long_toponly',
+ 'peft': None,
+ 'policy': {'chunk_size': 100,
+            'device': 'cuda',
+            'dim_feedforward': 3200,
+            'dim_model': 512,
+            'dropout': 0.1,
+            'feedforward_activation': 'relu',
+            'input_features': {'observation.images.top_rgb': {'shape': [3,
+                                                                        480,
+                                                                        640],
+                                                              'type': <FeatureType.VISUAL: 'VISUAL'>},
+                               'observation.state': {'shape': [12],
+                                                     'type': <FeatureType.STATE: 'STATE'>}},
+            'kl_weight': 10.0,
+            'latent_dim': 32,
+            'license': None,
+            'n_action_steps': 100,
+            'n_decoder_layers': 1,
+            'n_encoder_layers': 4,
+            'n_heads': 8,
+            'n_obs_steps': 1,
+            'n_vae_encoder_layers': 4,
+            'normalization_mapping': {'ACTION': <NormalizationMode.MEAN_STD: 'MEAN_STD'>,
+                                      'STATE': <NormalizationMode.MEAN_STD: 'MEAN_STD'>,
+                                      'VISUAL': <NormalizationMode.MEAN_STD: 'MEAN_STD'>},
+            'optimizer_lr': 1e-05,
+            'optimizer_lr_backbone': 1e-05,
+            'optimizer_weight_decay': 0.0001,
+            'output_features': {'action': {'shape': [12],
+                                           'type': <FeatureType.ACTION: 'ACTION'>}},
+            'pre_norm': False,
+            'pretrained_backbone_weights': 'ResNet18_Weights.IMAGENET1K_V1',
+            'pretrained_path': None,
+            'private': None,
+            'progress_loss_weight': 0.1,
+            'push_to_hub': False,
+            'replace_final_stride_with_dilation': False,
+            'repo_id': None,
+            'tags': None,
+            'temporal_ensemble_coeff': None,
+            'type': 'act',
+            'use_amp': False,
+            'use_peft': False,
+            'use_progress_head': True,
+            'use_vae': True,
+            'vision_backbone': 'resnet18'},
+ 'rabc_epsilon': 1e-06,
+ 'rabc_head_mode': 'sparse',
+ 'rabc_kappa': 0.01,
+ 'rabc_progress_path': None,
+ 'rename_map': {},
+ 'resume': False,
+ 'save_checkpoint': True,
+ 'save_freq': 5000,
+ 'scheduler': None,
+ 'seed': 1000,
+ 'steps': 30000,
+ 'tolerance_s': 0.0001,
+ 'use_policy_training_preset': True,
+ 'use_rabc': False,
+ 'wandb': {'disable_artifact': False,
+           'enable': False,
+           'entity': None,
+           'mode': None,
+           'notes': None,
+           'project': 'lerobot',
+           'run_id': None}}
+INFO 2026-11-19 13:56:57 ot_train.py:203 Logs will be saved locally.
+INFO 2026-11-19 13:56:57 ot_train.py:215 Creating dataset
+INFO 2026-11-19 13:56:57 ot_train.py:233 Creating policy
+INFO 2026-11-19 13:56:57 ot_train.py:288 Creating optimizer and scheduler
+INFO 2026-11-19 13:56:57 ot_train.py:323 Output dir: outputs/train/act_top_long_toponly
+INFO 2026-11-19 13:56:57 ot_train.py:330 cfg.steps=30000 (30K)
+INFO 2026-11-19 13:56:57 ot_train.py:331 dataset.num_frames=83068 (83K)
+INFO 2026-11-19 13:56:57 ot_train.py:332 dataset.num_episodes=250
+INFO 2026-11-19 13:56:57 ot_train.py:335 Effective batch size: 8 x 1 = 8
+INFO 2026-11-19 13:56:57 ot_train.py:336 num_learnable_params=51741069 (52M)
+INFO 2026-11-19 13:56:57 ot_train.py:337 num_total_params=51741069 (52M)
+INFO 2026-11-19 13:56:57 ot_train.py:393 Start offline training on a fixed dataset, with effective batch size: 8
+/home/monicaffy/文档/Trae-CN/temp_20261110_01/lehome-challenge/.venv/lib/python3.11/site-packages/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we'll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+/home/monicaffy/文档/Trae-CN/temp_20261110_01/lehome-challenge/.venv/lib/python3.11/site-packages/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we'll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+/home/monicaffy/文档/Trae-CN/temp_20261110_01/lehome-challenge/.venv/lib/python3.11/site-packages/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we'll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+/home/monicaffy/文档/Trae-CN/temp_20261110_01/lehome-challenge/.venv/lib/python3.11/site-packages/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we'll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+INFO 2026-11-19 13:58:17 ot_train.py:428 step:1K smpl:8K ep:24 epch:0.10 loss:3.265 grdn:86.612 lr:1.0e-05 updt_s:0.073 data_s:0.007
+INFO 2026-11-19 13:58:17 ot_train.py:430 progress_loss: 0.0014
+INFO 2026-11-19 13:59:37 ot_train.py:428 step:2K smpl:16K ep:48 epch:0.19 loss:1.548 grdn:56.266 lr:1.0e-05 updt_s:0.072 data_s:0.006
+INFO 2026-11-19 13:59:37 ot_train.py:430 progress_loss: 0.0024
+INFO 2026-11-19 14:00:54 ot_train.py:428 step:3K smpl:24K ep:72 epch:0.29 loss:1.010 grdn:43.866 lr:1.0e-05 updt_s:0.071 data_s:0.006
+INFO 2026-11-19 14:00:54 ot_train.py:430 progress_loss: 0.0017
+INFO 2026-11-19 14:02:12 ot_train.py:428 step:4K smpl:32K ep:96 epch:0.39 loss:0.681 grdn:35.070 lr:1.0e-05 updt_s:0.071 data_s:0.006
+INFO 2026-11-19 14:02:12 ot_train.py:430 progress_loss: 0.0031
+INFO 2026-11-19 14:03:32 ot_train.py:428 step:5K smpl:40K ep:120 epch:0.48 loss:0.501 grdn:28.734 lr:1.0e-05 updt_s:0.072 data_s:0.007
+INFO 2026-11-19 14:03:32 ot_train.py:430 progress_loss: 0.0005
+INFO 2026-11-19 14:03:32 ot_train.py:450 Checkpoint policy after step 5000
+INFO 2026-11-19 14:04:49 ot_train.py:428 step:6K smpl:48K ep:144 epch:0.58 loss:0.404 grdn:24.893 lr:1.0e-05 updt_s:0.071 data_s:0.006
+INFO 2026-11-19 14:04:49 ot_train.py:430 progress_loss: 0.0005
+INFO 2026-11-19 14:06:06 ot_train.py:428 step:7K smpl:56K ep:169 epch:0.67 loss:0.351 grdn:22.209 lr:1.0e-05 updt_s:0.070 data_s:0.006
+INFO 2026-11-19 14:06:06 ot_train.py:430 progress_loss: 0.0016
+INFO 2026-11-19 14:07:23 ot_train.py:428 step:8K smpl:64K ep:193 epch:0.77 loss:0.315 grdn:20.418 lr:1.0e-05 updt_s:0.071 data_s:0.006
+INFO 2026-11-19 14:07:23 ot_train.py:430 progress_loss: 0.0004
+INFO 2026-11-19 14:08:40 ot_train.py:428 step:9K smpl:72K ep:217 epch:0.87 loss:0.289 grdn:18.665 lr:1.0e-05 updt_s:0.070 data_s:0.006
+INFO 2026-11-19 14:08:40 ot_train.py:430 progress_loss: 0.0002
+INFO 2026-11-19 14:09:57 ot_train.py:428 step:10K smpl:80K ep:241 epch:0.96 loss:0.271 grdn:17.765 lr:1.0e-05 updt_s:0.070 data_s:0.006
+INFO 2026-11-19 14:09:57 ot_train.py:430 progress_loss: 0.0004
+INFO 2026-11-19 14:09:57 ot_train.py:450 Checkpoint policy after step 10000
+/home/monicaffy/文档/Trae-CN/temp_20261110_01/lehome-challenge/.venv/lib/python3.11/site-packages/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we'll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+/home/monicaffy/文档/Trae-CN/temp_20261110_01/lehome-challenge/.venv/lib/python3.11/site-packages/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we'll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+/home/monicaffy/文档/Trae-CN/temp_20261110_01/lehome-challenge/.venv/lib/python3.11/site-packages/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we'll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+/home/monicaffy/文档/Trae-CN/temp_20261110_01/lehome-challenge/.venv/lib/python3.11/site-packages/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we'll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+INFO 2026-11-19 14:11:14 ot_train.py:428 step:11K smpl:88K ep:265 epch:1.06 loss:0.253 grdn:16.652 lr:1.0e-05 updt_s:0.071 data_s:0.006
+INFO 2026-11-19 14:11:14 ot_train.py:430 progress_loss: 0.0008
+INFO 2026-11-19 14:12:31 ot_train.py:428 step:12K smpl:96K ep:289 epch:1.16 loss:0.240 grdn:15.581 lr:1.0e-05 updt_s:0.070 data_s:0.006
+INFO 2026-11-19 14:12:31 ot_train.py:430 progress_loss: 0.0007
+INFO 2026-11-19 14:13:48 ot_train.py:428 step:13K smpl:104K ep:313 epch:1.25 loss:0.231 grdn:14.735 lr:1.0e-05 updt_s:0.071 data_s:0.006
+INFO 2026-11-19 14:13:48 ot_train.py:430 progress_loss: 0.0004
+INFO 2026-11-19 14:15:04 ot_train.py:428 step:14K smpl:112K ep:337 epch:1.35 loss:0.219 grdn:14.156 lr:1.0e-05 updt_s:0.070 data_s:0.006
+INFO 2026-11-19 14:15:04 ot_train.py:430 progress_loss: 0.0002
+INFO 2026-11-19 14:16:21 ot_train.py:428 step:15K smpl:120K ep:361 epch:1.44 loss:0.212 grdn:13.545 lr:1.0e-05 updt_s:0.070 data_s:0.006
+INFO 2026-11-19 14:16:21 ot_train.py:430 progress_loss: 0.0002
+INFO 2026-11-19 14:16:21 ot_train.py:450 Checkpoint policy after step 15000
+INFO 2026-11-19 14:17:39 ot_train.py:428 step:16K smpl:128K ep:385 epch:1.54 loss:0.206 grdn:13.427 lr:1.0e-05 updt_s:0.072 data_s:0.006
+INFO 2026-11-19 14:17:39 ot_train.py:430 progress_loss: 0.0004
+INFO 2026-11-19 14:18:57 ot_train.py:428 step:17K smpl:136K ep:409 epch:1.64 loss:0.197 grdn:12.569 lr:1.0e-05 updt_s:0.071 data_s:0.006
+INFO 2026-11-19 14:18:57 ot_train.py:430 progress_loss: 0.0004
+INFO 2026-11-19 14:20:14 ot_train.py:428 step:18K smpl:144K ep:433 epch:1.73 loss:0.193 grdn:12.129 lr:1.0e-05 updt_s:0.070 data_s:0.006
+INFO 2026-11-19 14:20:14 ot_train.py:430 progress_loss: 0.0002
+INFO 2026-11-19 14:21:31 ot_train.py:428 step:19K smpl:152K ep:457 epch:1.83 loss:0.187 grdn:11.655 lr:1.0e-05 updt_s:0.071 data_s:0.006
+INFO 2026-11-19 14:21:31 ot_train.py:430 progress_loss: 0.0002
+INFO 2026-11-19 14:22:49 ot_train.py:428 step:20K smpl:160K ep:482 epch:1.93 loss:0.183 grdn:11.500 lr:1.0e-05 updt_s:0.071 data_s:0.006
+INFO 2026-11-19 14:22:49 ot_train.py:430 progress_loss: 0.0005
+INFO 2026-11-19 14:22:49 ot_train.py:450 Checkpoint policy after step 20000
+/home/monicaffy/文档/Trae-CN/temp_20261110_01/lehome-challenge/.venv/lib/python3.11/site-packages/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we'll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+/home/monicaffy/文档/Trae-CN/temp_20261110_01/lehome-challenge/.venv/lib/python3.11/site-packages/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we'll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+/home/monicaffy/文档/Trae-CN/temp_20261110_01/lehome-challenge/.venv/lib/python3.11/site-packages/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we'll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+/home/monicaffy/文档/Trae-CN/temp_20261110_01/lehome-challenge/.venv/lib/python3.11/site-packages/torchvision/io/_video_deprecation_warning.py:5: UserWarning: The video decoding and encoding capabilities of torchvision are deprecated from version 0.22 and will be removed in version 0.24. We recommend that you migrate to TorchCodec, where we'll consolidate the future decoding/encoding capabilities of PyTorch: https://github.com/pytorch/torchcodec
+  warnings.warn(
+INFO 2026-11-19 14:24:05 ot_train.py:428 step:21K smpl:168K ep:506 epch:2.02 loss:0.178 grdn:10.955 lr:1.0e-05 updt_s:0.070 data_s:0.006
+INFO 2026-11-19 14:24:05 ot_train.py:430 progress_loss: 0.0004
+INFO 2026-11-19 14:25:22 ot_train.py:428 step:22K smpl:176K ep:530 epch:2.12 loss:0.173 grdn:10.735 lr:1.0e-05 updt_s:0.070 data_s:0.006
+INFO 2026-11-19 14:25:22 ot_train.py:430 progress_loss: 0.0004
+INFO 2026-11-19 14:26:40 ot_train.py:428 step:23K smpl:184K ep:554 epch:2.22 loss:0.169 grdn:10.518 lr:1.0e-05 updt_s:0.072 data_s:0.006
+INFO 2026-11-19 14:26:40 ot_train.py:430 progress_loss: 0.0002
+INFO 2026-11-19 14:28:06 ot_train.py:428 step:24K smpl:192K ep:578 epch:2.31 loss:0.167 grdn:10.187 lr:1.0e-05 updt_s:0.078 data_s:0.007
+INFO 2026-11-19 14:28:06 ot_train.py:430 progress_loss: 0.0003
+INFO 2026-11-19 14:29:30 ot_train.py:428 step:25K smpl:200K ep:602 epch:2.41 loss:0.164 grdn:9.928 lr:1.0e-05 updt_s:0.077 data_s:0.007
+INFO 2026-11-19 14:29:30 ot_train.py:430 progress_loss: 0.0003
+INFO 2026-11-19 14:29:30 ot_train.py:450 Checkpoint policy after step 25000
+INFO 2026-11-19 14:30:55 ot_train.py:428 step:26K smpl:208K ep:626 epch:2.50 loss:0.162 grdn:9.649 lr:1.0e-05 updt_s:0.077 data_s:0.007
+INFO 2026-11-19 14:30:55 ot_train.py:430 progress_loss: 0.0002
+INFO 2026-11-19 14:32:22 ot_train.py:428 step:27K smpl:216K ep:650 epch:2.60 loss:0.158 grdn:9.553 lr:1.0e-05 updt_s:0.078 data_s:0.008
+INFO 2026-11-19 14:32:22 ot_train.py:430 progress_loss: 0.0002
+INFO 2026-11-19 14:33:53 ot_train.py:428 step:28K smpl:224K ep:674 epch:2.70 loss:0.157 grdn:9.492 lr:1.0e-05 updt_s:0.080 data_s:0.011
+INFO 2026-11-19 14:33:53 ot_train.py:430 progress_loss: 0.0003
+INFO 2026-11-19 14:35:18 ot_train.py:428 step:29K smpl:232K ep:698 epch:2.79 loss:0.153 grdn:9.391 lr:1.0e-05 updt_s:0.077 data_s:0.007
+INFO 2026-11-19 14:35:18 ot_train.py:430 progress_loss: 0.0001
+INFO 2026-11-19 14:36:44 ot_train.py:428 step:30K smpl:240K ep:722 epch:2.89 loss:0.151 grdn:9.184 lr:1.0e-05 updt_s:0.077 data_s:0.007
+INFO 2026-11-19 14:36:44 ot_train.py:430 progress_loss: 0.0003
+INFO 2026-11-19 14:36:44 ot_train.py:450 Checkpoint policy after step 30000
+INFO 2026-11-19 14:36:44 ot_train.py:521 End of training
